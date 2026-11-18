@@ -252,7 +252,14 @@ impl Config {
                         Some(v.parse().map_err(|_| err(format!("bad advertise IP {:?}", v)))?)
                     }
                 }
-                "realm" => cfg.realm = v.to_string(),
+                "realm" => {
+                    // Sent as realm="..." in every challenge: `realm = "home"`
+                    // would become realm=""home"", which no phone can answer.
+                    if v.contains(['"', '\\']) {
+                        return Err(err("realm must not contain quotes or backslashes".into()));
+                    }
+                    cfg.realm = v.to_string()
+                }
                 "allow" => cfg.allow = parse_allow(v).map_err(err)?,
                 "state" | "state_file" => {
                     cfg.state_file = if v.is_empty() {
@@ -397,6 +404,11 @@ mod tests {
         assert!(e.contains("line 2") && e.contains("allow is set twice"), "{e}");
         assert!(err("log = info\nLog_Level = debug\n[extensions]\n1 = a\n").contains("log is set twice"));
         assert!(err("realm = a\n[extensions]\n1 = a\n[general]\nrealm = b\n").contains("line 5"));
+        // Values are literal: a quoted realm would garble every challenge.
+        for realm in ["\"home\"", "my \"pbx\"", "a\\b"] {
+            let e = err(&format!("realm = {realm}\n[extensions]\n1 = a\n"));
+            assert!(e.contains("line 1") && e.contains("realm"), "{e}");
+        }
         // `allow` with nothing in it would ignore every packet.
         assert!(err("allow =\n[extensions]\n1 = a\n").contains("allow"));
         assert!(err("allow = , \n[extensions]\n1 = a\n").contains("allow"));

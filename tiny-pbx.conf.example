@@ -1,7 +1,8 @@
 # Copy to tiny-pbx.conf and replace the example passwords. Validate with:
 #   tiny-pbx -c tiny-pbx.conf check
 # General settings are optional; put them here or in [general]. Lines
-# starting with # or ; are comments (no trailing comments on values).
+# starting with # or ; are comments. Values are taken literally: no quotes
+# and no trailing comments (they would become part of a password).
 
 # UDP listen address (0.0.0.0 = all IPv4 interfaces) and Digest realm.
 #listen = 0.0.0.0:5060
