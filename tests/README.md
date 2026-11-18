@@ -57,9 +57,9 @@ the other.
   groups use `127.0.0.4:5060` (`--group-host` or `PBX_TEST_GROUP_HOST`). If
   an address is taken, prefer another host to another port: off port 5060
   the attended-transfer test fails, because pjsua leaves the port out of
-  `Refer-To`. Two tests start a PBX of their own, whatever these options say:
+  `Refer-To`. Three tests start a PBX of their own, whatever these options say:
   one on UDP port 5080 of every address (its phones use `127.0.0.2` and
-  `127.0.0.3`), one on a free port of `127.0.0.3`. Set `PBX_BIN` to use a
+  `127.0.0.3`), two on a free port of `127.0.0.3`. Set `PBX_BIN` to use a
   prebuilt binary.
 - **Docker:** the harness builds `pbx-interop-ua:latest` and a static binary
   in `target/static` (override with `PBX_STATIC_BIN`). By default it uses

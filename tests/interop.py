@@ -663,6 +663,48 @@ def t_allow_filter(env):
     return "; ".join(res)
 
 
+def t_log_pipe_closed(env):
+    """Whatever read the PBX's log is gone (a `| tee` that died, a restarted
+    journald): log lines can no longer be written, and calls go on anyway."""
+    import socket
+    import subprocess
+
+    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    probe.bind(("127.0.0.3", 0))
+    port = probe.getsockname()[1]
+    probe.close()
+    conf = os.path.join(fresh_dir(os.path.join(env.out, "nolog")), "tiny-pbx.conf")
+    with open(conf, "w") as f:
+        f.write("listen = 127.0.0.3:%d\n[extensions]\n101 = x\n" % port)
+    # debug: every packet is logged before it is handled
+    p = subprocess.Popen(
+        [env.bin, "-c", conf],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        env=dict(os.environ, PBX_LOG="debug"),
+    )
+    raw = RawUA(("127.0.0.1", 0), ("127.0.0.3", port))
+    try:
+        check(b"listening on udp" in p.stderr.readline(), "PBX did not start")
+        p.stderr.close()  # from here on, writing a log line fails (EPIPE)
+        local_port = raw.s.getsockname()[1]
+        for n in (1, 2):
+            raw.send(
+                "OPTIONS sip:127.0.0.3:%d SIP/2.0\nVia: SIP/2.0/UDP 127.0.0.1:%d;rport;branch=z9hG4bK-nolog-%d-%d\n"
+                "From: <sip:101@127.0.0.3>;tag=a\nTo: <sip:127.0.0.3>\nCall-ID: nolog-%d\nCSeq: %d OPTIONS\n"
+                "Max-Forwards: 70\n" % (port, local_port, os.getpid(), n, os.getpid(), n)
+            )
+            r = raw.recv(1.0)
+            check(r and " 200 " in first_line(r), "OPTIONS %d: %s; PBX exit status: %s" % (n, first_line(r), p.poll()))
+        check(p.poll() is None, "PBX exited with status %s" % p.poll())
+    finally:
+        raw.close()
+        p.kill()
+        p.wait()
+    return "log pipe closed: 2 x OPTIONS -> 200, PBX still running"
+
+
 def t_sipp_unregister(env):
     """Unregister sipp's 104 with a hand-made REGISTER (Contact: *)."""
     ua = RawUA(("127.0.0.1", 5094), (env.host, env.port))
@@ -1008,6 +1050,7 @@ TESTS = [
     ("dialog hangup after both unregister", t_dialog_unregister),
     ("phones on two addresses of the PBX", t_multihome),
     ("allow filter (CIDR)", t_allow_filter),
+    ("closed log pipe", t_log_pipe_closed),
     ("idle CPU", t_idle_cpu),
 ]
 GROUP_TESTS = groups.TESTS

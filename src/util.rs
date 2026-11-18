@@ -195,7 +195,10 @@ pub fn log_write(l: u8, args: std::fmt::Arguments) {
     if test_log::capture(format!("{} {}", tag, text)) {
         return;
     }
-    eprintln!("{} {} {}", log_time(now_unix()), tag, text);
+    // Not eprintln!, which panics if stderr cannot be written (whatever read
+    // it is gone: `| tee`, journald): better to go on serving without a log.
+    use std::io::Write;
+    let _ = writeln!(std::io::stderr(), "{} {} {}", log_time(now_unix()), tag, text);
 }
 
 /// Make a log message safe to print: control characters (ESC, CR, ...)
