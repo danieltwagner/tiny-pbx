@@ -1,0 +1,5 @@
+target
+.git
+tests
+tiny-pbx.conf
+bindings.txt*

@@ -1,0 +1,6 @@
+/target
+/tests/out/
+__pycache__/
+# A local config (real passwords) and its state, per README "Without Docker"
+/tiny-pbx.conf
+/bindings.txt*

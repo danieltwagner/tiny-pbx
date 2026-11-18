@@ -1,0 +1,57 @@
+# Copy to tiny-pbx.conf and replace the example passwords. Validate with:
+#   tiny-pbx -c tiny-pbx.conf check
+# General settings are optional; put them here or in [general]. Lines
+# starting with # or ; are comments (no trailing comments on values).
+
+# UDP listen address (0.0.0.0 = all IPv4 interfaces) and Digest realm.
+#listen = 0.0.0.0:5060
+#realm = pbx
+
+# Ignore packets outside these networks. Separate CIDRs or IPs with commas
+# or spaces. "private" includes loopback, private LANs, link-local and CGNAT;
+# "any" disables the filter. Prefer your phone subnet, e.g. 192.168.1.0/24.
+#allow = private
+
+# Override the IP in SIP Via and Record-Route headers (default: autodetect).
+# This affects signalling only; it does not make RTP reachable.
+#advertise =
+
+# Registration intervals (seconds). Shorter requests get 423; longer ones
+# are capped. The default is clamped to this range; default and max must be > 0.
+#min_expires = 60
+#max_expires = 3600
+#default_expires = 3600
+
+# Keep in-dialog signalling via the PBX, including across subnets.
+#record_route = yes
+
+# For new calls and messages, trust a known From extension only at its
+# registered IP:port; for other From names, trust any registered phone.
+# Other senders must authenticate. "no" lets any allowed sender impersonate a line.
+#auth_calls = yes
+
+# Registration file, relative to this config unless absolute. Keep it and
+# <state>.key across restarts; their directory must be writable. The config
+# path must not collide with the state file, its .key or its .tmp file.
+# Restored registrations last at most max_expires; invalid rows are skipped.
+#state = bindings.txt
+
+# error | warn | info | debug ($PBX_LOG overrides). Debug logs every SIP
+# packet with credential headers redacted.
+#log = info
+
+[extensions]
+# SIP user / auth user = password. Up to five devices per extension; a sixth
+# replaces a binding on the same host if possible, otherwise the soonest to expire.
+# REGISTER retries do not reapply changes within 32 s. The PBX remembers 64
+# REGISTERs per extension for that; another one gets 503 until one of them
+# expires or the PBX restarts.
+101 = change-me-101
+102 = change-me-102
+
+[groups]
+# Dialled number = extensions to ring together (spaces or commas; * = all).
+# Calls that ring several phones (a group, or an extension on several devices)
+# are limited to 64 at once, 4 per calling IP address; further ones get 503.
+#100 = *
+#200 = 101 102

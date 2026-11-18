@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!-- REGISTER extension 104 with compact headers, no rport, and a
+     repeated authenticated REGISTER (same branch and CSeq). -->
+<scenario name="register 104 compact/no-rport/retransmission">
+  <send retrans="500">
+    <![CDATA[
+
+      REGISTER sip:[remote_ip]:[remote_port] SIP/2.0
+      v: SIP/2.0/UDP [local_ip]:[local_port];branch=z9hG4bK-reg1-[pid]-[call_number]
+      f: <sip:104@[remote_ip]:[remote_port]>;tag=r[pid]-[call_number]
+      t: <sip:104@[remote_ip]:[remote_port]>
+      i: [call_id]
+      CSeq: 1 REGISTER
+      m: <sip:104@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      Expires: 300
+      User-Agent: sipp
+      l: 0
+
+    ]]>
+  </send>
+
+  <recv response="401" auth="true">
+    <action>
+      <ereg regexp="qop=&quot;auth&quot;" search_in="hdr" header="WWW-Authenticate:" check_it="true" assign_to="dummy"/>
+      <!-- no rport in our Via, so the PBX must not invent one -->
+      <ereg regexp="rport" search_in="hdr" header="Via:" check_it_inverse="true" assign_to="dummy"/>
+    </action>
+  </recv>
+
+  <send retrans="500">
+    <![CDATA[
+
+      REGISTER sip:[remote_ip]:[remote_port] SIP/2.0
+      v: SIP/2.0/UDP [local_ip]:[local_port];branch=z9hG4bK-reg2-[pid]-[call_number]
+      f: <sip:104@[remote_ip]:[remote_port]>;tag=r[pid]-[call_number]
+      t: <sip:104@[remote_ip]:[remote_port]>
+      i: [call_id]
+      CSeq: 2 REGISTER
+      m: <sip:104@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      Expires: 300
+      User-Agent: sipp
+      [authentication username=104 password=pw104]
+      l: 0
+
+    ]]>
+  </send>
+
+  <recv response="200">
+    <action>
+      <ereg regexp="&lt;sip:104@[^>]*:[0-9]+>;expires=300" search_in="hdr" header="Contact:" check_it="true" assign_to="dummy"/>
+    </action>
+  </recv>
+
+  <!-- Same transaction identifiers. SIPp generates a fresh Digest count. -->
+  <send retrans="500">
+    <![CDATA[
+
+      REGISTER sip:[remote_ip]:[remote_port] SIP/2.0
+      v: SIP/2.0/UDP [local_ip]:[local_port];branch=z9hG4bK-reg2-[pid]-[call_number]
+      f: <sip:104@[remote_ip]:[remote_port]>;tag=r[pid]-[call_number]
+      t: <sip:104@[remote_ip]:[remote_port]>
+      i: [call_id]
+      CSeq: 2 REGISTER
+      m: <sip:104@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      Expires: 300
+      User-Agent: sipp
+      [authentication username=104 password=pw104]
+      l: 0
+
+    ]]>
+  </send>
+
+  <recv response="200">
+    <action>
+      <ereg regexp="&lt;sip:104@[^>]*>;expires=" search_in="hdr" header="Contact:" check_it="true" assign_to="dummy"/>
+    </action>
+  </recv>
+</scenario>

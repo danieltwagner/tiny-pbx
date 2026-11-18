@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!-- Assorted requests from an unregistered address:
+     OPTIONS ping to the PBX, SUBSCRIBE (489), Proxy-Require (420), unknown
+     extension (407 first, as for any number from a stranger; then 404, ACKs
+     absorbed), spoofed From (407 -> 403), REGISTER of someone else's
+     extension (401 -> 403). -->
+<scenario name="misc">
+  <send retrans="500">
+    <![CDATA[
+
+      OPTIONS sip:[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m1-[pid]-[call_number]
+      From: <sip:105@[remote_ip]:[remote_port]>;tag=m[pid]-[call_number]
+      To: <sip:[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 1 OPTIONS
+      Max-Forwards: 70
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="200">
+    <action>
+      <ereg regexp="INVITE" search_in="hdr" header="Allow:" check_it="true" assign_to="dummy"/>
+      <ereg regexp="rport=[0-9]+" search_in="hdr" header="Via:" check_it="true" assign_to="dummy"/>
+    </action>
+  </recv>
+
+  <send retrans="500">
+    <![CDATA[
+
+      SUBSCRIBE sip:102@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m2-[pid]-[call_number]
+      From: <sip:105@[remote_ip]:[remote_port]>;tag=m[pid]-[call_number]
+      To: <sip:102@[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 2 SUBSCRIBE
+      Event: presence
+      Expires: 600
+      Contact: <sip:105@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="489"/>
+
+  <send retrans="500">
+    <![CDATA[
+
+      OPTIONS sip:102@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m3-[pid]-[call_number]
+      From: <sip:105@[remote_ip]:[remote_port]>;tag=m[pid]-[call_number]
+      To: <sip:102@[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 3 OPTIONS
+      Proxy-Require: com.example.frobnicate
+      Max-Forwards: 70
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="420">
+    <action>
+      <ereg regexp="frobnicate" search_in="hdr" header="Unsupported:" check_it="true" assign_to="dummy"/>
+    </action>
+  </recv>
+
+  <send retrans="500">
+    <![CDATA[
+
+      INVITE sip:999@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m4-[pid]-[call_number]
+      From: <sip:105@[remote_ip]:[remote_port]>;tag=m[pid]-[call_number]
+      To: <sip:999@[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 4 INVITE
+      Contact: <sip:105@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="407" auth="true"/>
+  <send>
+    <![CDATA[
+
+      ACK sip:999@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m4-[pid]-[call_number]
+      From: <sip:105@[remote_ip]:[remote_port]>;tag=m[pid]-[call_number]
+      [last_To:]
+      Call-ID: [call_id]
+      CSeq: 4 ACK
+      Max-Forwards: 70
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <send retrans="500">
+    <![CDATA[
+
+      INVITE sip:999@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m4b-[pid]-[call_number]
+      From: <sip:105@[remote_ip]:[remote_port]>;tag=m[pid]-[call_number]
+      To: <sip:999@[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 5 INVITE
+      Contact: <sip:105@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      [authentication username=105 password=pw105]
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="404"/>
+  <send>
+    <![CDATA[
+
+      ACK sip:999@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m4b-[pid]-[call_number]
+      From: <sip:105@[remote_ip]:[remote_port]>;tag=m[pid]-[call_number]
+      [last_To:]
+      Call-ID: [call_id]
+      CSeq: 5 ACK
+      Max-Forwards: 70
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <!-- From says 101, but we are not 101's registered address -->
+  <send retrans="500">
+    <![CDATA[
+
+      INVITE sip:102@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m5-[pid]-[call_number]
+      From: <sip:101@[remote_ip]:[remote_port]>;tag=s[pid]-[call_number]
+      To: <sip:102@[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 1 INVITE
+      Contact: <sip:101@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="407" auth="true"/>
+  <send>
+    <![CDATA[
+
+      ACK sip:102@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m5-[pid]-[call_number]
+      From: <sip:101@[remote_ip]:[remote_port]>;tag=s[pid]-[call_number]
+      [last_To:]
+      Call-ID: [call_id]
+      CSeq: 1 ACK
+      Max-Forwards: 70
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <send retrans="500">
+    <![CDATA[
+
+      INVITE sip:102@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m6-[pid]-[call_number]
+      From: <sip:101@[remote_ip]:[remote_port]>;tag=s[pid]-[call_number]
+      To: <sip:102@[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 2 INVITE
+      Contact: <sip:101@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      [authentication username=105 password=pw105]
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="403"/>
+  <send>
+    <![CDATA[
+
+      ACK sip:102@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m6-[pid]-[call_number]
+      From: <sip:101@[remote_ip]:[remote_port]>;tag=s[pid]-[call_number]
+      [last_To:]
+      Call-ID: [call_id]
+      CSeq: 2 ACK
+      Max-Forwards: 70
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <!-- 105's password must not let us register 101 -->
+  <send retrans="500">
+    <![CDATA[
+
+      REGISTER sip:[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m7-[pid]-[call_number]
+      From: <sip:101@[remote_ip]:[remote_port]>;tag=g[pid]-[call_number]
+      To: <sip:101@[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 1 REGISTER
+      Contact: <sip:101@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="401" auth="true"/>
+  <send retrans="500">
+    <![CDATA[
+
+      REGISTER sip:[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/UDP [local_ip]:[local_port];rport;branch=z9hG4bK-m8-[pid]-[call_number]
+      From: <sip:101@[remote_ip]:[remote_port]>;tag=g[pid]-[call_number]
+      To: <sip:101@[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 2 REGISTER
+      Contact: <sip:101@[local_ip]:[local_port]>
+      Max-Forwards: 70
+      [authentication username=105 password=pw105]
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <recv response="403"/>
+  <pause milliseconds="100"/>
+</scenario>

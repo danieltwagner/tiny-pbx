@@ -1,0 +1,7 @@
+# Lint settings for the Python test tooling: `ruff check tests`.
+# (The scripts are not formatted with `ruff format`.)
+line-length = 200
+
+[lint]
+select = ["E", "F", "W"]
+ignore = ["E741"] # `l` for a line
