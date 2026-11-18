@@ -160,6 +160,8 @@ impl Config {
     pub fn parse(text: &str) -> Result<Config, String> {
         let mut cfg = Config::default();
         let mut section = String::new();
+        let mut set: Vec<String> = Vec::new(); // the settings seen so far
+
         // Editors on Windows like to start UTF-8 files with a byte order mark.
         let text = text.strip_prefix('\u{feff}').unwrap_or(text);
         for (n, raw) in text.lines().enumerate() {
@@ -220,6 +222,22 @@ impl Config {
                 cfg.extensions.insert(k.to_string(), v.to_string());
                 continue;
             }
+            // A second line would silently replace the first: of two `allow`
+            // lines, the phones in the first network would just be ignored.
+            let name = match k.to_ascii_lowercase().as_str() {
+                "state_file" => "state".to_string(),
+                "log_level" => "log".to_string(),
+                name => name.to_string(),
+            };
+            if set.contains(&name) {
+                let hint = if name == "allow" {
+                    "; list all networks on one line"
+                } else {
+                    ""
+                };
+                return Err(err(format!("{} is set twice{}", name, hint)));
+            }
+            set.push(name);
             match k.to_ascii_lowercase().as_str() {
                 "listen" => {
                     cfg.listen = v
@@ -374,6 +392,11 @@ mod tests {
         assert!(err("[extensions]\n1 = a\n2 = b\n[groups]\n100 = 1\n100 = 2\n").contains("twice"));
         let c = Config::parse("\u{feff}realm = home\n[extensions]\n1 = a\n").unwrap();
         assert_eq!(c.realm, "home");
+        // A repeated setting is not a list, whatever it is called and wherever.
+        let e = err("allow = 192.168.1.0/24\nallow = 10.0.0.0/8\n[extensions]\n1 = a\n");
+        assert!(e.contains("line 2") && e.contains("allow is set twice"), "{e}");
+        assert!(err("log = info\nLog_Level = debug\n[extensions]\n1 = a\n").contains("log is set twice"));
+        assert!(err("realm = a\n[extensions]\n1 = a\n[general]\nrealm = b\n").contains("line 5"));
         // `allow` with nothing in it would ignore every packet.
         assert!(err("allow =\n[extensions]\n1 = a\n").contains("allow"));
         assert!(err("allow = , \n[extensions]\n1 = a\n").contains("allow"));
