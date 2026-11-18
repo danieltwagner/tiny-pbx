@@ -222,7 +222,7 @@ fn fmt_params(params: &[(String, Option<String>)]) -> String {
     s
 }
 
-/// Split "host:port" / "[v6]:port" / "host".
+/// Split `host:port` / `[v6]:port` / `host`.
 fn split_hostport(hp: &str) -> Option<(String, Option<u16>)> {
     let hp = hp.trim();
     if hp.is_empty() {
